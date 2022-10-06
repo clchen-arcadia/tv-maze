@@ -17,30 +17,18 @@ const PLACEHOLDER_IMG_URL = "https://tinyurl.com/tv-missing";
 async function getShowsByTerm(term) {
   // ADD: Remove placeholder & make request to TVMaze search shows API.
 
-  console.log('getShowsByTerm is invoked');
-
   const response = await axios.get("http://api.tvmaze.com/search/shows",
-    { params: {q: term, x: 1} } //?q=${term}&x=1
+    { params: { q: term, x: 1 } } //?q=${term}&x=1
   );
   let outputShows = [];
-  for(let show of response.data){ //great choice for map() here //response.data.show
-    // const show2 = {id: show.id, name: show.name, summary: show.summary,
-    //   image: (show.image === null)? PLACEHOLDER_IMG_URL=> } //ternary
-    let tempObj = {};
-    for(let i of ['id', 'name', 'summary', 'image']){ //'i' is RESERVED for index. use id
-      if(i === 'image'){
-        if(show.show.image === null){
-          tempObj[i] = PLACEHOLDER_IMG_URL;
-        }
-        else{
-          tempObj[i] = show.show.image.medium;
-        }
-      }
-      else{
-        tempObj[i] = show.show[i];
-      }
-    }
-    outputShows.push(tempObj);
+  for (let showAPIResult of response.data) {
+    let showInfo = {
+      "id": showAPIResult.show.id,
+      "name": showAPIResult.show.name,
+      "summary": showAPIResult.show.summary,
+      "image": showAPIResult.show.image ? showAPIResult.show.image.medium : PLACEHOLDER_IMG_URL,
+    };
+    outputShows.push(showInfo);
   }
 
   return outputShows;
@@ -98,27 +86,65 @@ function populateShows(shows) {
  */
 
 async function searchForShowAndDisplay() {
-  console.log("searchForShowAndDisplay is invoked");
-
   const term = $("#searchForm-term").val();
   const shows = await getShowsByTerm(term);
 
   $episodesArea.hide();
   populateShows(shows);
+
 }
 
-$searchForm.on("submit", async function (evt) {
-  evt.preventDefault();
-  await searchForShowAndDisplay();
-});
+
 
 
 /** Given a show ID, get from API and return (promise) array of episodes:
  *      { id, name, season, number }
  */
 
-// async function getEpisodesOfShow(id) { }
+async function getEpisodesOfShow(id) {
+  let response = await axios.get(`http://api.tvmaze.com/shows/${id}/episodes`);
+  let outPutEpisodes = [];
+  for (let showApiResults of response.data) {
+    let episodeInfo = {
+      "id": showApiResults.id,
+      "name": showApiResults.name,
+      "season": showApiResults.season,
+      "number": showApiResults.number,
+    };
+    outPutEpisodes.push(episodeInfo);
+  }
 
-/** Write a clear docstring for this function... */
+  return outPutEpisodes;
+};
 
-// function populateEpisodes(episodes) { }
+/**
+ * input : episodes
+ * output: none
+ * Takes list of episodes and appends them to the DOM
+ */
+function populateEpisodes(episodes) {
+  const $listOfEpisodes = $("<ul>");
+  for (let episode of episodes) {
+    const $episodeListItem = $(`<li>${episode.name} (season ${episode.season}
+      , number${episode.number})</li>`);
+    $listOfEpisodes.append($episodeListItem);
+  }
+  $("#episodesList").append($($listOfEpisodes));
+  $("#episodesArea").show();
+}
+
+
+$searchForm.on("submit", async function (evt) {
+  evt.preventDefault();
+  await searchForShowAndDisplay();
+});
+
+// Handle "Show Episodes" button
+$showsList.on('click', '.btn', async function (evt) {
+  // let showId = (evt.target.parentElement.parentElement.parentElement.id); //what is data-show-id??
+  // populateEpisodes(await getEpisodesOfShow(showId));
+
+  let showId = $(evt.target).closest('.Show').data('showId');
+
+  populateEpisodes(await getEpisodesOfShow(showId));
+});
