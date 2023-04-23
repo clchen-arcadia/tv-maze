@@ -13,6 +13,7 @@ const PLACEHOLDER_IMG_URL = "https://tinyurl.com/tv-missing";
  *    Each show object should contain exactly: {id, name, summary, image}
  *    (if no image URL given by API, put in a default image URL)
  */
+
 async function getShowsByTerm(term) {
   const response = await axios.get(
     "http://api.tvmaze.com/search/shows",
@@ -36,6 +37,7 @@ async function getShowsByTerm(term) {
 
 
 /** Given list of shows, function creates markup for each and to DOM */
+
 function populateShows(shows) {
   $showsList.empty();
 
@@ -66,6 +68,7 @@ function populateShows(shows) {
 /** Handle search form submission: get shows from API and display.
  *    Hide episodes area (that only gets shown if they ask for episodes)
  */
+
 async function searchForShowAndDisplay() {
   const term = $("#searchForm-term").val();
   const shows = await getShowsByTerm(term);
@@ -80,6 +83,7 @@ async function searchForShowAndDisplay() {
 /** Given a show ID, get from API and return (promise) array of episodes:
  *      { id, name, season, number }
  */
+
 async function getEpisodesOfShow(id) {
   let response = await axios.get(`http://api.tvmaze.com/shows/${id}/episodes`);
   let outPutEpisodes = [];
